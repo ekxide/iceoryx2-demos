@@ -1,0 +1,41 @@
+[workspace]
+resolver = "2"
+members = [
+	"automotive-reference-system"
+]
+
+[workspace.package]
+categories = ["network-programming"]
+description = "iceoryx2 demos"
+edition = "2024"
+homepage = "https://ekxide.io"
+keywords = [
+    "zero-copy",
+    "communication",
+    "ipc",
+]
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/ekxide/iceoryx2-demos"
+rust-version = "1.89"
+version = "0.1.0"
+
+[workspace.dependencies]
+iceoryx2 = { git = "https://github.com/eclipse-iceoryx/iceoryx2", branch = "main" }
+iceoryx2-bb-container = { git = "https://github.com/eclipse-iceoryx/iceoryx2", branch = "main" }
+iceoryx2-bb-posix = { git = "https://github.com/eclipse-iceoryx/iceoryx2", branch = "main" }
+iceoryx2-bb-system-types = { git = "https://github.com/eclipse-iceoryx/iceoryx2", branch = "main" }
+# iceoryx2 = { version = "0.9.3" }
+# iceoryx2-bb-container = { version = "0.9.3" }
+# iceoryx2-bb-posix = { version = "0.9.3" }
+# iceoryx2-bb-system-types = { version = "0.9.3" }
+clap = { version = "4.4.18", features = ["derive", "env"] }
+ouroboros = { version = "0.17.1" }
+audio_sink_core = { path = "drivers/audio_sink/core" }
+audio_sink_types = { path = "drivers/audio_sink/types" }
+
+[profile.release]
+strip = true
+lto = true
+# opt-level = "z"
+panic = "abort"
