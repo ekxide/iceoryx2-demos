@@ -1,10 +1,9 @@
 use iceoryx2::{
     node::{Node, NodeBuilder},
-
     prelude::{EventId, NodeName, PortName, ServiceName},
 };
 use iceoryx2_bb_posix::clock::Time;
-use std::{sync::OnceLock, time::Duration};
+use std::{sync::Arc, sync::Mutex, time::Duration};
 
 use crate::comm_traits::{
     Communication, ListenerBuilderTrait, ListenerTrait, NotifierBuilderTrait, NotifierTrait,
@@ -13,7 +12,28 @@ use crate::comm_traits::{
 
 pub type ServiceType = iceoryx2::service::ipc::Service;
 
-pub static GLOBAL_NODE: OnceLock<Node<ServiceType>> = OnceLock::new();
+static GLOBAL_NODE: Mutex<Option<Arc<Node<ServiceType>>>> = Mutex::new(None);
+
+fn init_global_node(node_name: &str) {
+    let mut node_guard = GLOBAL_NODE.lock().unwrap();
+    if node_guard.is_some() {
+        panic!("Double initialization of global node!");
+    }
+    *node_guard = Some(Arc::new(
+        NodeBuilder::new()
+            .name(&NodeName::new(node_name).unwrap())
+            .create()
+            .unwrap(),
+    ));
+}
+
+pub fn unset_global_node() {
+    let _ = GLOBAL_NODE.lock().unwrap().take();
+}
+
+pub fn global_node() -> Option<Arc<Node<ServiceType>>> {
+    GLOBAL_NODE.lock().unwrap().clone()
+}
 
 impl PublisherTrait for iceoryx2::port::publisher::Publisher<ServiceType, [u8], Time> {
     fn send(
@@ -88,7 +108,7 @@ impl PublisherBuilderTrait for PublisherBuilder {
     }
 
     fn create(self) -> Result<Box<dyn PublisherTrait>, Box<dyn core::error::Error>> {
-        let node = GLOBAL_NODE.get().unwrap();
+        let node = global_node().unwrap();
 
         let service = node
             .service_builder(&self.service_name)
@@ -129,7 +149,7 @@ impl SubscriberBuilderTrait for SubscriberBuilder {
     }
 
     fn create(self) -> Result<Box<dyn SubscriberTrait>, Box<dyn core::error::Error>> {
-        let node = GLOBAL_NODE.get().unwrap();
+        let node = global_node().unwrap();
 
         let service = node
             .service_builder(&self.service_name)
@@ -164,7 +184,7 @@ impl NotifierBuilderTrait for NotifierBuilder {
     }
 
     fn create(self) -> Result<Box<dyn NotifierTrait>, Box<dyn core::error::Error>> {
-        let node = GLOBAL_NODE.get().unwrap();
+        let node = global_node().unwrap();
 
         let service = node
             .service_builder(&self.service_name)
@@ -195,7 +215,7 @@ impl ListenerBuilderTrait for ListenerBuilder {
     }
 
     fn create(self) -> Result<Box<dyn ListenerTrait>, Box<dyn core::error::Error>> {
-        let node = GLOBAL_NODE.get().unwrap();
+        let node = global_node().unwrap();
 
         let service = node
             .service_builder(&self.service_name)
@@ -226,13 +246,6 @@ impl Communication for CommIceoryx2 {
     type NotifierBuilder = NotifierBuilder;
 
     fn init(node_name: &str) {
-        GLOBAL_NODE
-            .set(
-                NodeBuilder::new()
-                    .name(&NodeName::new(node_name).unwrap())
-                    .create()
-                    .unwrap(),
-            )
-            .unwrap();
+        init_global_node(node_name);
     }
 }

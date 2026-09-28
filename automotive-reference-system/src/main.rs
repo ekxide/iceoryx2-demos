@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use comm::{
-    comm_iceoryx2::{CommIceoryx2, GLOBAL_NODE},
+    comm_iceoryx2::{CommIceoryx2, global_node, unset_global_node},
     comm_traits::{
         Communication, ListenerBuilderTrait, ListenerTrait, NotifierBuilderTrait, NotifierTrait,
         PublisherBuilderTrait, PublisherTrait, SubscriberBuilderTrait, SubscriberTrait,
@@ -8,8 +8,8 @@ use comm::{
 };
 
 use std::sync::{
-    atomic::{AtomicBool, Ordering},
     Arc,
+    atomic::{AtomicBool, Ordering},
 };
 use std::thread;
 use std::{fmt::Display, mem::MaybeUninit, time::Duration, time::Instant};
@@ -199,7 +199,7 @@ impl Sensor {
     }
 
     fn main_loop(&self) {
-        let node = GLOBAL_NODE.get().unwrap();
+        let node = global_node().unwrap();
 
         let terminate_flag = Arc::new(AtomicBool::new(false));
         let mut counter = 0u64;
@@ -230,7 +230,6 @@ impl Sensor {
 
             println!("send iteration: {}", counter);
             counter += 1;
-            std::thread::sleep(Duration::from_millis(self.interval_in_ms));
         }
 
         // wrap up and terminate threads
@@ -300,7 +299,7 @@ impl Actor {
     }
 
     fn main_loop(&mut self) {
-        let node = GLOBAL_NODE.get().unwrap();
+        let node = global_node().unwrap();
         let mut latency = Latency::new();
         let num_cores = 1;
         let percentage = self.cpu_load as u32;
@@ -315,14 +314,14 @@ impl Actor {
             })
             .collect();
 
-        while node
+        'outer: while node
             .wait(Duration::from_millis(self.interval_in_ms))
             .is_ok()
         {
             if self.event_triggering {
                 for (i, sample) in self.samples.iter().enumerate() {
                     if !sample && self.listeners[i].blocking_wait().is_err() {
-                        return;
+                        break 'outer;
                     }
                     while self.listeners[i].try_wait().unwrap() != 0 {}
                 }
@@ -350,7 +349,6 @@ impl Actor {
                     *sample = false;
                 }
             }
-            std::thread::sleep(Duration::from_millis(self.interval_in_ms));
         }
 
         // wrap up and terminate threads
@@ -454,7 +452,7 @@ impl Processor {
     }
 
     fn main_loop(&mut self) {
-        let node = GLOBAL_NODE.get().unwrap();
+        let node = global_node().unwrap();
         let mut latency = Latency::new();
         let num_cores = 1;
         let percentage = self.cpu_load as u32;
@@ -469,14 +467,14 @@ impl Processor {
             })
             .collect();
 
-        while node
+        'outer: while node
             .wait(Duration::from_millis(self.interval_in_ms))
             .is_ok()
         {
             if self.event_triggering {
                 for (i, sample) in self.samples.iter().enumerate() {
                     if !sample && self.listeners[i].blocking_wait().is_err() {
-                        return;
+                        break 'outer;
                     }
                     while self.listeners[i].try_wait().unwrap() != 0 {}
                 }
@@ -573,4 +571,6 @@ fn main() {
             sensor.main_loop()
         }
     }
+
+    unset_global_node();
 }
