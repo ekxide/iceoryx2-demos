@@ -20,9 +20,4 @@ iceoryx2 = { workspace = true }
 iceoryx2-bb-container = { workspace = true }
 iceoryx2-bb-posix = { workspace = true }
 iceoryx2-bb-system-types = { workspace = true }
-# iceoryx2 = { version = "0.9.3" }
-# iceoryx2-bb-container = { version = "0.9.3" }
-# iceoryx2-bb-posix = { version = "0.9.3" }
-# iceoryx2-bb-system-types = { version = "0.9.3" }
 clap = { workspace = true }
-ouroboros = { workspace = true }
