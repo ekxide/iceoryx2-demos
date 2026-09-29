@@ -5,7 +5,7 @@ It is a living project, and more topologies will be added over time.
 However, it currently includes only the `automotive-reference-system`.
 
 Please note that this repo is not intended as a tutorial for building systems based on iceoryx2.
-Instead, it runs a single application configured with different command line arguments to create specific setups that can be introspected with [ekxide Mission Control](https://ekxide.io/products/mission-control/).
+Instead, it runs a single application configured with different command line arguments to create specific setups that can be introspected with [ekxide Mission Control](https://ekxide.io/mission-control/).
 The repository is therefore also serves as a showcase for `ekxide Mission Control` features.
 
 ## Run the `automotive-reference-system`
